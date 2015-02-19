@@ -10,22 +10,38 @@
         host={{ inventory_hostname }}
         ucs_user={{ username }}
         ucs_pass={{ password }}
-        outputfile=output.txt
-        logfile=log.txt
+        outputfile=../output/wwpn.json
+        logfile=../output/log.txt
 
-- name: Perform SAN Configuration
+- name: Generate SAN Zones
   hosts: nexus5k
   connection: local
   gather_facts: no
 
   tasks:
-    - name: Push configuration to Nexus switches via SSH
-      installconfig: 
+    - name: Generate Fibre Channel zone configuration
+      generatefczones: 
         host={{ inventory_hostname }}
-        n5k_user={{ username }}
-        n5k_pass={{ password }}
         fabric_id={{ fabricid }}
         vsan_id={{ vsanid }}
         fc_targets={{ targets }}
-        inputfile=output.txt
-        logfile=log.txt
+        inputfile=../output/wwpn.json
+        logfile=../output/log.txt
+        zonefile_fabric_a=../output/zonecfg_a.txt
+        zonefile_fabric_b=../output/zonecfg_b.txt
+
+# - name: Perform SAN Configuration
+#   hosts: nexus5k
+#   connection: local
+#   gather_facts: no
+
+#   tasks:
+#     - name: Push configuration to Nexus switches via SSH
+#       installfczones: 
+#         host={{ inventory_hostname }}
+#         n5k_user={{ username }}
+#         n5k_pass={{ password }}
+#         fabric_id={{ fabricid }}
+#         logfile=../output/log.txt
+#         zonefile_fabric_a=../output/zonecfg_a.txt
+#         zonefile_fabric_b=../output/zonecfg_b.txt

@@ -2,13 +2,13 @@
 
 DOCUMENTATION = '''
 ---
-module: installconfig
+module: installfczones
 version_added: 0.1
-short_description: NX-OS configuration installer (strict SSH)
+short_description: NX-OS FC zone installer (strict SSH)
 description:
-   - This module is built as an example for pulling Cisco UCS WWPNs from a JSON file created by the 'getucsinfo' module. 
+   - This module is built as an example for pushing a configuration snippet to nexus switches. 
      There will be another module created later for more long-term usage in pushing configurations to a Cisco device.
-author: Matt Oswalt
+author: Matt Oswalt / Ryan Benigno (refactored)
 '''
 
 import logging
@@ -24,19 +24,6 @@ EXAMPLES = '''
 TBD
 '''
 
-def getTargets():
-  #This is a quick and easy way to insert target WWPNs into the template. I am planning on building in functionality similar to what I'm doing with UCS.
-  targets = {}
-  targets['50:00:00:00:00:11:a0:01'] = 'Netapp-01-0a' 
-  targets['50:00:00:00:00:11:a0:02'] = 'Netapp-01-0b'
-  return targets
-
-def jinja_config(vHBADict, fabric_id, vsan_id, targets):
-  env = Environment(loader=FileSystemLoader('../templates'))
-  template = env.get_template('fctemplate')
- 
-  return template.render(initDict=vHBADict[fabric_id], targets=targets, vsan=vsan_id)
-
 def nxos_install_rawconfig(module):
 
   results = {}
@@ -50,11 +37,6 @@ def nxos_install_rawconfig(module):
   fabric_id = module.params['fabric_id']
 
   results['configfile'] = inputfile
-
-  targets = module.params['fc_targets'].split(",")
-
-  json_data = open(inputfile)
-  vHBADict = json.load(json_data)
 
   #Generate configuration snippet based off of the parameters given, using the jinja template specified
   config_snippet = jinja_config(vHBADict, fabric_id, vsan_id, targets)
@@ -136,9 +118,8 @@ def main():
       n5k_user=dict(required=True),
       n5k_pass=dict(required=True),
       fabric_id=dict(required=True),
-      vsan_id=dict(required=True),
-      fc_targets=dict(required=True),
-      inputfile=dict(required=True),
+      zonefile_fabric_a=dict(required=True),
+      zonefile_fabric_b=dict(required=True),
       override=dict(required=False, default=False),
       logfile=dict(required=False, default=None),
       timeout=dict(required=False, default=0)

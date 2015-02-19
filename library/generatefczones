@@ -1,0 +1,119 @@
+#!/usr/bin/env python2.7
+
+DOCUMENTATION = '''
+---
+module: generatefczones
+version_added: 0.1
+short_description: Generate Nexus/MDS FC zone configuration snippets, given initiators and targets.
+description:
+   - This module will generate FC configuration snippets using a JSON file containing initiator information.
+   - The targets are (currently) statically defined in the Ansible playbook.
+   - Jinja templating is used to define the config snippet format.
+author: Matt Oswalt / Ryan Benigno (refactored)
+'''
+
+import logging
+from os.path import isfile
+import paramiko
+import os
+import sys
+import time
+import select
+from jinja2 import Template, Environment, FileSystemLoader
+
+EXAMPLES = '''
+TBD
+'''
+
+def jinja_config(vHBADict, fabric_id, vsan_id, targets):
+  env = Environment(loader=FileSystemLoader('../templates'))
+  template = env.get_template('fctemplate')
+ 
+  return template.render(initDict=vHBADict[fabric_id], targets=targets, vsan=vsan_id)
+
+def generate_zone_configs(module):
+  results = {}
+
+  #Pull config file from configfile parameter
+  inputfile = module.params['inputfile']
+  inputfile = os.path.abspath(inputfile)
+
+  host = module.params['host']
+  vsan_id = module.params['vsan_id']
+  fabric_id = module.params['fabric_id']
+
+  results['configfile'] = inputfile
+
+  targets = module.params['fc_targets'].split(",")
+
+  json_data = open(inputfile)
+  vHBADict = json.load(json_data)
+
+  #Generate configuration snippet based off of the parameters given, using the jinja template specified
+  config_snippet = jinja_config(vHBADict, fabric_id, vsan_id, targets)
+  
+  outputfile = "zonefile_fabric_" + fabric_id
+  outputfile = module.params[outputfile]
+  outputfile = os.path.abspath(outputfile)
+
+  results['outputfile'] = outputfile
+
+  try:
+
+    f = open(outputfile,'w')
+
+    f.write(config_snippet)
+
+    #Clean-up
+    f.close()
+
+    logging.info('Generated zone configurations for: {}'.format(host))
+
+  except Exception, err:
+    results['failed'] = True
+    msg = "Unable to retrieve info"
+    results['msg'] = msg
+    logging.info('Error on {}'.format(module.params['host']))
+    logging.info(err)
+    module.fail_json(msg='error on {}'.format(module.params['host']))
+
+  #This module is not built to make changes, so we are returning false here.
+  results['changed'] = False
+
+  return results
+
+
+### ---------------------------------------------------------------------------
+### MAIN
+### ---------------------------------------------------------------------------
+
+def main():
+  module = AnsibleModule(
+    argument_spec = dict(
+      host=dict(required=True),
+      fabric_id=dict(required=True),
+      vsan_id=dict(required=True),
+      fc_targets=dict(required=True),
+      inputfile=dict(required=True),
+      zonefile_fabric_a=dict(required=True),
+      zonefile_fabric_b=dict(required=True),
+      override=dict(required=False, default=False),
+      logfile=dict(required=False, default=None),
+      timeout=dict(required=False, default=0)
+    ),
+    supports_check_mode = False
+  )
+
+  logfile = module.params.get('logfile')
+  if logfile is not None:
+    logging.basicConfig(filename=logfile, level=logging.INFO,
+      format='%(asctime)s:%(name)s:%(message)s')
+    logging.getLogger().name = 'CONFIG:'+ module.params['host']  
+
+  logging.info("About to generate zone snippit for: {}".format(module.params['host']))
+  results = generate_zone_configs(module)
+
+  module.exit_json(**results)
+
+from ansible.module_utils.basic import *
+main()

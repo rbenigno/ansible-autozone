@@ -115,7 +115,7 @@ def getucswwpns(module):
     results['failed'] = True
     msg = "Unable to retrieve info"
     results['msg'] = msg
-    logging.info('Error aon {}'.format(module.params['host']))
+    logging.info('Error on {}'.format(module.params['host']))
     logging.info(err)
     module.fail_json(msg='error on {}'.format(module.params['host']))
 
@@ -152,4 +152,3 @@ def main():
 
 from ansible.module_utils.basic import *
 main()
-

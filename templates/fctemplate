@@ -1,7 +1,7 @@
 device-alias database
-{% for wwpn, name in initDict|dictsort  -%}
+  {% for wwpn, name in initDict|dictsort  -%}
   device-alias name {{ name }} pwwn {{ wwpn }}
-{% endfor %}
+  {% endfor %}
 device-alias commit
 
 vsan database
