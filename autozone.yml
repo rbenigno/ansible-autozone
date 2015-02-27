@@ -1,5 +1,5 @@
 ---
-- name: Get Existing UCS Information
+- name: Get vHBAs from UCS
   hosts: ucs
   connection: local
   gather_facts: no
@@ -10,8 +10,7 @@
         host={{ inventory_hostname }}
         ucs_user={{ username }}
         ucs_pass={{ password }}
-        outputfile=../output/wwpn.json
-        logfile=../output/log.txt
+        outputfile=./output/wwpn.json
 
 - name: Generate SAN Zones
   hosts: nexus5k
@@ -25,10 +24,9 @@
         fabric_id={{ fabricid }}
         vsan_id={{ vsanid }}
         fc_targets={{ targets }}
-        inputfile=../output/wwpn.json
-        logfile=../output/log.txt
-        zonefile_fabric_a=../output/zonecfg_a.txt
-        zonefile_fabric_b=../output/zonecfg_b.txt
+        inputfile=./output/wwpn.json
+        zonefile_fabric_a=./output/zonecfg_a.txt
+        zonefile_fabric_b=./output/zonecfg_b.txt
 
 # - name: Perform SAN Configuration
 #   hosts: nexus5k

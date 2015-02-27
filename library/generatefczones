@@ -12,21 +12,23 @@ description:
 author: Matt Oswalt / Ryan Benigno (refactored)
 '''
 
-import logging
-from os.path import isfile
-import paramiko
-import os
-import sys
-import time
-import select
-from jinja2 import Template, Environment, FileSystemLoader
+try:
+# import logging
+  from os.path import isfile
+  import os
+  import sys
+  import time
+  import select
+  from jinja2 import Template, Environment, FileSystemLoader
+except ImportError:
+  module.fail_json(msg='Python library import failed {}'.format(str(err)))
 
 EXAMPLES = '''
 TBD
 '''
 
 def jinja_config(vHBADict, fabric_id, vsan_id, targets):
-  env = Environment(loader=FileSystemLoader('../templates'))
+  env = Environment(loader=FileSystemLoader('./templates'), trim_blocks=True, lstrip_blocks=True)
   template = env.get_template('fctemplate')
  
   return template.render(initDict=vHBADict[fabric_id], targets=targets, vsan=vsan_id)
@@ -67,14 +69,14 @@ def generate_zone_configs(module):
     #Clean-up
     f.close()
 
-    logging.info('Generated zone configurations for: {}'.format(host))
+    # logging.info('Generated zone configurations for: {}'.format(host))
 
   except Exception, err:
     results['failed'] = True
     msg = "Unable to retrieve info"
     results['msg'] = msg
-    logging.info('Error on {}'.format(module.params['host']))
-    logging.info(err)
+    # logging.info('Error on {}'.format(module.params['host']))
+    # logging.info(err)
     module.fail_json(msg='error on {}'.format(module.params['host']))
 
   #This module is not built to make changes, so we are returning false here.
@@ -98,19 +100,19 @@ def main():
       zonefile_fabric_a=dict(required=True),
       zonefile_fabric_b=dict(required=True),
       override=dict(required=False, default=False),
-      logfile=dict(required=False, default=None),
+      #logfile=dict(required=False, default=None),
       timeout=dict(required=False, default=0)
     ),
     supports_check_mode = False
   )
 
-  logfile = module.params.get('logfile')
-  if logfile is not None:
-    logging.basicConfig(filename=logfile, level=logging.INFO,
-      format='%(asctime)s:%(name)s:%(message)s')
-    logging.getLogger().name = 'CONFIG:'+ module.params['host']  
+  # logfile = module.params.get('logfile')
+  # if logfile is not None:
+  #   logging.basicConfig(filename=logfile, level=logging.INFO,
+  #     format='%(asctime)s:%(name)s:%(message)s')
+  #   logging.getLogger().name = 'CONFIG:'+ module.params['host'] 
 
-  logging.info("About to generate zone snippit for: {}".format(module.params['host']))
+  # logging.info("About to generate zone snippit for: {}".format(module.params['host']))
   results = generate_zone_configs(module)
 
   module.exit_json(**results)

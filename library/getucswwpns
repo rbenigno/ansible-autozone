@@ -10,13 +10,16 @@ description:
 author: Matt Oswalt
 '''
 
-import logging
-from os.path import isfile
-import sys
-import time
-import json
-import select
-from UcsSdk import *
+# import logging
+try: 
+  from os.path import isfile
+  import sys
+  import time
+  import json
+  import select
+  from UcsSdk import *
+except ImportError:
+    module.fail_json(msg='Python library import failed {}'.format(str(err)))
 
 EXAMPLES = '''
 TBD
@@ -42,12 +45,14 @@ def getucswwpns(module):
   results['changed'] = False
 
   try:
-
-    logging.info("Connecting to UCSM at " + module.params['host'])
-
     #Connect to UCSM
     handle = UcsHandle()  
     handle.Login(module.params['host'], username=module.params['ucs_user'], password=module.params['ucs_pass'])
+
+  except Exception, err:
+    module.fail_json(msg='Error connecting to UCSM {}'.format(str(err)))
+
+  try:
 
     #Instantiate the dictionaries that will hold our WWPNs
     vHBADict = {}
@@ -78,7 +83,7 @@ def getucswwpns(module):
         origDn = origDn.replace('ls-','')
         origDn = origDn.replace('fc-','')
 
-        logging.info('Retrived ' + origDn + ' with address ' + mo.Addr)
+        # logging.info('Retrived ' + origDn + ' with address ' + mo.Addr)
 
         #using the WWPN address as key since more likely to be unique
         FabADict[mo.Addr] = origDn
@@ -94,7 +99,7 @@ def getucswwpns(module):
         origDn = origDn.replace('ls-','')
         origDn = origDn.replace('fc-','')
 
-        logging.info('Retrived ' + origDn + ' with address ' + mo.Addr)
+        # logging.info('Retrived ' + origDn + ' with address ' + mo.Addr)
 
         #using the WWPN address as key since more likely to be unique
         FabBDict[mo.Addr] = origDn
@@ -109,15 +114,10 @@ def getucswwpns(module):
     f.close()
     handle.Logout()
 
-    logging.info('WWPNs retrieved, JSON file created.')
+    # logging.info('WWPNs retrieved, JSON file created.')
 
   except Exception, err:
-    results['failed'] = True
-    msg = "Unable to retrieve info"
-    results['msg'] = msg
-    logging.info('Error on {}'.format(module.params['host']))
-    logging.info(err)
-    module.fail_json(msg='error on {}'.format(module.params['host']))
+    module.fail_json(msg='Error getting data from UCSM {}'.format(str(err)))
 
   return results
 
@@ -138,14 +138,14 @@ def main():
     ),
     supports_check_mode = False
   )
+  print(module.params['ucs_user'])
+  # logfile = module.params.get('logfile')
+  # if logfile is not None:
+  #   logging.basicConfig(filename=logfile, level=logging.INFO,
+  #     format='%(asctime)s:%(name)s:%(message)s')
+  #   logging.getLogger().name = 'CONFIG:'+module.params['host']  
 
-  logfile = module.params.get('logfile')
-  if logfile is not None:
-    logging.basicConfig(filename=logfile, level=logging.INFO,
-      format='%(asctime)s:%(name)s:%(message)s')
-    logging.getLogger().name = 'CONFIG:'+module.params['host']  
-
-  logging.info("About to retrieve storage configurations from host: {}".format(module.params['host']))
+  # logging.info("About to retrieve storage configurations from host: {}".format(module.params['host']))
   results = getucswwpns(module)
 
   module.exit_json(**results)

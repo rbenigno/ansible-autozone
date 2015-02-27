@@ -1,4 +1,7 @@
 #This is a sample hosts file that will make use of the arguments for these two modules
+[all:vars]
+ansible_connection = local
+ansible_python_interpreter = python
 
 [ucs]
 10.12.0.78

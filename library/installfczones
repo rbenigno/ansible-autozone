@@ -11,7 +11,7 @@ description:
 author: Matt Oswalt / Ryan Benigno (refactored)
 '''
 
-import logging
+# import logging
 from os.path import isfile
 import paramiko
 import os
@@ -42,55 +42,55 @@ def nxos_install_rawconfig(module):
   config_snippet = jinja_config(vHBADict, fabric_id, vsan_id, targets)
 
   try:
-    logging.info("Connecting to " + module.params['host'])
+    # logging.info("Connecting to " + module.params['host'])
 
     i = 1
     while True:
-        logging.info("Trying to connect to %s (%i/3)" % (host, i))
+        # logging.info("Trying to connect to %s (%i/3)" % (host, i))
 
         try:
             ssh = paramiko.SSHClient()
             ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             ssh.connect(host, username=module.params['n5k_user'], password=module.params['n5k_pass'])
             chan = ssh.invoke_shell()
-            logging.info("Connected to %s" % host)
+            # logging.info("Connected to %s" % host)
             #Connection successful, break out of the loop
             break
         except paramiko.AuthenticationException:
-            logging.info("Authentication failed when connecting to %s" % host)
+            # logging.info("Authentication failed when connecting to %s" % host)
             module.fail_json(msg='unable to connect to {}'.format(module.params['host']))
         except:
-            logging.info("Could not SSH to %s, waiting for it to start" % host)
+            # logging.info("Could not SSH to %s, waiting for it to start" % host)
             module.fail_json(msg='unable to connect to {}'.format(module.params['host']))
             i += 1
             time.sleep(2)
 
         # If we could not connect within time limit
         if i == 3:
-            logging.info(")Could not connect to %s. Giving up" %st)
+            # logging.info(")Could not connect to %s. Giving up" %st)
             module.fail_json(msg='unable to connect to {}'.format(module.params['host']))
 
     try:
-      logging.info("pushing configuration")
+      # logging.info("pushing configuration")
 
       chan.send('conf t' + '\n')
       chan.recv(9999)
       for line in iter(config_snippet.splitlines()):
-        logging.info(" -- CONFIGOUT -- " + line)
+        # logging.info(" -- CONFIGOUT -- " + line)
         chan.send(line + '\n')
         time.sleep(1)
         resp = chan.recv(9999)
-        logging.info(" -- RESPONSE -- " + resp)
+        # logging.info(" -- RESPONSE -- " + resp)
 
     except Exception as err:
       if err.rsp.find('.//ok') is None:
         rpc_msg = err.rsp.findtext('.//error-message')
-        logging.error("unable to load config:{}".format(rpc_msg))
+        # logging.error("unable to load config:{}".format(rpc_msg))
         raise err
       else:
         pass
       
-    logging.info("change completed, disconnecting from host")    
+    # logging.info("change completed, disconnecting from host")    
     ssh.close()
 
   except Exception as err:
@@ -98,7 +98,7 @@ def nxos_install_rawconfig(module):
     results['failed'] = True
     msg = "Unable to make changes"
     results['msg'] = msg
-    logging.error('Error details: '  + err)
+    # logging.error('Error details: '  + err)
     module.fail_json(msg='error on {}'.format(module.params['host']))
 
   #In the current state of this module, we're either making changes, or we're erroring out. So I'm statically setting this to True.
@@ -127,13 +127,13 @@ def main():
     supports_check_mode = False
   )
 
-  logfile = module.params.get('logfile')
-  if logfile is not None:
-    logging.basicConfig(filename=logfile, level=logging.INFO,
-      format='%(asctime)s:%(name)s:%(message)s')
-    logging.getLogger().name = 'CONFIG:'+ module.params['host']  
+  # logfile = module.params.get('logfile')
+  # if logfile is not None:
+  #   logging.basicConfig(filename=logfile, level=logging.INFO,
+  #     format='%(asctime)s:%(name)s:%(message)s')
+  #   logging.getLogger().name = 'CONFIG:'+ module.params['host']  
 
-  logging.info("About to push configuration to host: {}".format(module.params['host']))
+  # logging.info("About to push configuration to host: {}".format(module.params['host']))
   results = nxos_install_rawconfig(module)
 
   module.exit_json(**results)
