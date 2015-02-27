@@ -1,5 +1,5 @@
 ---
-- name: Get vHBAs from UCS
+- name: Get info from UCS
   hosts: ucs
   connection: local
   gather_facts: no

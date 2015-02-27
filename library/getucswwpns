@@ -18,8 +18,9 @@ try:
   import json
   import select
   from UcsSdk import *
-except ImportError:
-    module.fail_json(msg='Python library import failed {}'.format(str(err)))
+except ImportError, e:
+  print json.dumps({"failed": True, "msg": "import error - {}".format(str(e))})
+  sys.exit(1)
 
 EXAMPLES = '''
 TBD
@@ -138,7 +139,7 @@ def main():
     ),
     supports_check_mode = False
   )
-  print(module.params['ucs_user'])
+
   # logfile = module.params.get('logfile')
   # if logfile is not None:
   #   logging.basicConfig(filename=logfile, level=logging.INFO,
